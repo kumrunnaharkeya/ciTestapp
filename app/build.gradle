@@ -1,0 +1,64 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
+    defaultConfig {
+        applicationId "com.example.keya.citestapp"
+        minSdkVersion 15
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.microsoft.appcenter:appium-test-extension:1.0', {
+        exclude group: 'org.seleniumhq.selenium', module: 'selenium-htmlunit-driver'
+        exclude group: 'org.seleniumhq.selenium', module: 'selenium-chrome-driver'
+        exclude group: 'org.seleniumhq.selenium', module: 'selenium-edge-driver'
+        exclude group: 'org.seleniumhq.selenium', module: 'selenium-firefox-driver'
+        exclude group: 'org.seleniumhq.selenium', module: 'selenium-ie-driver'
+        exclude group: 'org.seleniumhq.selenium', module:'selenium-safari-driver'
+        exclude group: 'commons-beanutils', module:'commons-beanutils'
+    })
+    compile 'com.android.support:appcompat-v7:26.+'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+    def appCenterSdkVersion = '1.1.0'
+    compile "com.microsoft.appcenter:appcenter-analytics:${appCenterSdkVersion}"
+    compile "com.microsoft.appcenter:appcenter-crashes:${appCenterSdkVersion}"
+    testCompile 'org.seleniumhq.selenium:selenium-api:2.48.2'
+}
+configurations {
+    all*.exclude group: 'cglib', module: 'cglib'
+
+}
+apply plugin: 'maven'
+
+task createPom {
+    pom {
+        withXml {
+            def dependenciesNode = asNode().appendNode('dependencies')
+
+            //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+            configurations.testCompile.allDependencies.each {
+                def dependencyNode = dependenciesNode.appendNode('dependency')
+                dependencyNode.appendNode('groupId', it.group)
+                dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+            }
+
+            def profilesNode = asNode().appendNode('profiles')
+            profilesNode.append(new XmlParser().parse('https://raw.githubusercontent.com/Microsoft/AppCenter-Test-Appium-Java-Extensions/master/gradleuploadprofilesnippet.xml'))
+        }
+    }.writeTo("pom.xml")}
